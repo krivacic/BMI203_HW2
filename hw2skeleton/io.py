@@ -22,6 +22,14 @@ def read_active_sites(dir):
 
     return active_sites
 
+def contains(small, big):
+    for i in xrange(len(big)-len(small)+1):
+        for j in xrange(len(small)):
+            if big[i+j] != small[j]:
+                break
+        else:
+            return i, i+len(small)
+    return False
 
 def read_active_site(filepath):
     """
@@ -42,8 +50,16 @@ def read_active_site(filepath):
 
     # open pdb file
     with open(filepath, "r") as f:
+        res_num = 0
+        rescheck = []
         # iterate over each line in the file
         for line in f:
+            if line[0:3] != 'TER':
+                res_num = line[23:26]
+            if res_num in rescheck:
+                #print(res_num)
+                #print(rescheck)
+                break
             if line[0:3] != 'TER':
                 # read in an atom
                 atom_type = line[13:17].strip()
@@ -54,7 +70,7 @@ def read_active_site(filepath):
                 atom.coords = (x_coord, y_coord, z_coord)
 
                 residue_type = line[17:20]
-                residue_number = int(line[23:26])
+                residue_number = line[23:26]
 
                 # make a new residue if needed
                 if residue_number != r_num:
@@ -66,7 +82,12 @@ def read_active_site(filepath):
 
             else:  # I've reached a TER card
                 active_site.residues.append(residue)
-
+                #active_site.residues.append(residue_type)
+                #active_site.residues.append(residue_number)
+                rescheck.append(residue_number)
+                #active_site.reslist.append(residue_type)
+    #return reslist
+    #print(active_site.residues)
     return active_site
 
 
@@ -79,12 +100,10 @@ def write_clustering(filename, clusters):
     """
 
     out = open(filename, 'w')
-
-    for i in range(len(clusters)):
-        out.write("\nCluster %d\n--------------\n" % i)
-        for j in range(len(clusters[i])):
-            out.write("%s\n" % clusters[i][j])
-
+    for key in clusters:
+        out.write("\nCluster with medioid {}\n--------------\n".format(key))
+        for subkey in clusters[key]:
+            out.write("{} \n".format(str(subkey)))
     out.close()
 
 
@@ -98,10 +117,10 @@ def write_mult_clusterings(filename, clusterings):
 
     out = open(filename, 'w')
 
-    for i in range(len(clusterings)):
+    for i in clusterings:
         clusters = clusterings[i]
-
-        for j in range(len(clusters)):
+        out.write("Iteration # {}\n--------------------------\n".format(i))
+        for j in clusters:
             out.write("\nCluster %d\n------------\n" % j)
             for k in range(len(clusters[j])):
                 out.write("%s\n" % clusters[j][k])
